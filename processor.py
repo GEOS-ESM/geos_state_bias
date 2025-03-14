@@ -26,7 +26,8 @@ class Processor:
             152,
             160,
             170,
-            181]
+            181,
+        ]
         # Define the required keys
         self.keys = ['U', 'V', 'T', 'QV', 'QI', 'QL', 'QG', 'QR', 'QS', 'PS']
         # Check that the number of arrays matches the number of keys
@@ -35,6 +36,7 @@ class Processor:
 
         self.arrays = dict(zip(self.keys, arrays))
         self.ckpt_root_path = ckpt_root_path
+        self.shape_ = arrays[0].shape
 
     
     def prog_scale(self):
@@ -132,7 +134,9 @@ class Processor:
         ps_scaled = prog_scaled['PS']
         print("Scaled 2D variables")
         out_arrs = []
+        DTDT = np.zeros(self.shape_)
         for nz in self.levs:
+            print("nz:", nz, flush=True)
             lev_scaled = self.get_levs(nz)
             arrays = [prog_scaled[key][nz-1] for key in self.keys[:-1]]
             arrays.extend([ps_scaled, lat_scaled, lon_scaled, lev_scaled])
@@ -141,5 +145,5 @@ class Processor:
             tlist = geos_dataset.split_tensor(input_img, tile_size=180, xoffset=90)
             input_img = torch.stack(tlist, dim=0)
             y_hat = self.pred_one_lev(nz, input_img)
-            out_arrs.append(y_hat)
-        return out_arrs
+            DTDT[nz-1, :, :] = y_hat
+        return DTDT
