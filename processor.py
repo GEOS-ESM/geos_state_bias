@@ -135,15 +135,15 @@ class Processor:
         print("Scaled 2D variables")
         out_arrs = []
         DTDT = np.zeros(self.shape_)
-        for nz in self.levs:
-            print("nz:", nz, flush=True)
-            lev_scaled = self.get_levs(nz)
-            arrays = [prog_scaled[key][nz-1] for key in self.keys[:-1]]
+        for nz, lev in enumerate(self.levs):
+            print("nz/lev:", nz, lev, flush=True)
+            lev_scaled = self.get_levs(lev)
+            arrays = [prog_scaled[key][nz] for key in self.keys[:-1]] # except PS
             arrays.extend([ps_scaled, lat_scaled, lon_scaled, lev_scaled])
             vx = np.stack(arrays, axis=0)
             input_img = torch.Tensor(vx)
             tlist = geos_dataset.split_tensor(input_img, tile_size=180, xoffset=90)
             input_img = torch.stack(tlist, dim=0)
-            y_hat = self.pred_one_lev(nz, input_img)
-            DTDT[nz-1, :, :] = y_hat
+            y_hat = self.pred_one_lev(lev, input_img)
+            DTDT[nz, :, :] = y_hat
         return DTDT
